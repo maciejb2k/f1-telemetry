@@ -15,7 +15,11 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     ports: [ "15672:15672" ]
-    healthcheck: { test: ["CMD", "rabbitmq-diagnostics", "-q", "status"], interval: 10s }
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "status"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
 
   telemetry-db:
     image: postgres:16
@@ -39,30 +43,58 @@ services:
 
   telemetry:
     build: ./telemetry-service
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      telemetry-db:
+        condition: service_started
     environment:
       DATABASE_URL: postgres://postgres:secret@telemetry-db:5432/telemetry
-      RABBIT_URL:   amqp://guest:guest@rabbitmq:5672
+      RABBIT_URL: amqp://guest:guest@rabbitmq:5672
+      RAILS_ENV: development
     volumes: [ ./telemetry-service:/app ]
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.telemetry.rule=PathPrefix(`/telemetry`)"
       - "traefik.http.routers.telemetry.entrypoints=web"
       - "traefik.http.services.telemetry.loadbalancer.server.port=3000"
+    command: bash -c "rm -f tmp/pids/server.pid && bin/rails server -b '0.0.0.0'"
 
-  strategy-rules:
-    build: ./strategy-rules-service
+  rules:
+    build: ./rules-service
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      rules-db:
+        condition: service_started
     environment:
       DATABASE_URL: postgres://postgres:secret@rules-db:5432/rules
-      RABBIT_URL:   amqp://guest:guest@rabbitmq:5672
+      RABBIT_URL: amqp://guest:guest@rabbitmq:5672
+      RAILS_ENV: development
     volumes:
-      - ./strategy-rules:/app
+      - ./rules-service:/app
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.strategy-rules.rule=PathPrefix(`/rules`)"
       - "traefik.http.routers.strategy-rules.entrypoints=web"
       - "traefik.http.services.strategy-rules.loadbalancer.server.port=3000"
+    command: bash -c "rm -f tmp/pids/server.pid && bin/rails server -b '0.0.0.0'"
+
+  rules-subscriber:
+    build: ./rules-service
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      rules-db:
+        condition: service_started
+    command: bundle exec rake rabbitmq:listen
+    environment:
+      DATABASE_URL: postgres://postgres:secret@rules-db:5432/rules
+      RABBIT_URL: amqp://guest:guest@rabbitmq:5672
+      RAILS_ENV: development
+    volumes:
+      - ./rules-service:/app
 
 volumes:
   telemetry-data:
   rules-data:
-  alerts-data:
