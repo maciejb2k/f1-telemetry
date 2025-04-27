@@ -1,0 +1,45 @@
+services:
+  # ─── infra ────────────────────────────────────────────────
+  gateway:
+    image: traefik:v3.0
+    command: --providers.docker --entrypoints.web.address=:80 --api.insecure
+    ports: [ "8080:80", "8081:8080" ]
+    volumes: [ "/var/run/docker.sock:/var/run/docker.sock:ro" ]
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports: [ "15672:15672" ]
+    healthcheck: { test: ["CMD", "rabbitmq-diagnostics", "-q", "status"], interval: 10s }
+
+  telemetry-db:
+    image: postgres:16
+    environment: { POSTGRES_PASSWORD: secret, POSTGRES_DB: telemetry }
+    volumes: [ telemetry-data:/var/lib/postgresql/data ]
+
+  rules-db:
+    image: postgres:16
+    environment: { POSTGRES_PASSWORD: secret, POSTGRES_DB: rules }
+
+  alerts-db:
+    image: postgres:16
+    environment: { POSTGRES_PASSWORD: secret, POSTGRES_DB: alerts }
+
+  users-db:
+    image: postgres:16
+    environment: { POSTGRES_PASSWORD: secret, POSTGRES_DB: users }
+
+  # ─── mikroserwisy ─────────────────────────────────────────
+  telemetry:
+    build: ./telemetry-service
+    environment:
+      DATABASE_URL: postgres://postgres:secret@telemetry-db:5432/telemetry
+      RABBIT_URL:   amqp://guest:guest@rabbitmq:5672
+      CAR_CODES:   "1:Max Verstappen,11:Sergio Perez"
+      UID: ${UID:-1000}
+      GID: ${GID:-1000}
+    volumes: [ ./telemetry-service:/app ]
+    labels:
+      - traefik.http.routers.telemetry.rule=PathPrefix(`/telemetry`,`/cars`)
+
+volumes:
+  telemetry-data:
