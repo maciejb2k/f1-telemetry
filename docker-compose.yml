@@ -17,7 +17,7 @@ services:
     ports: [ "15672:15672" ]
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "status"]
-      interval: 10s
+      interval: 3s
       timeout: 10s
       retries: 5
 
@@ -31,13 +31,10 @@ services:
     environment: { POSTGRES_PASSWORD: secret, POSTGRES_DB: rules }
     volumes: [ rules-data:/var/lib/postgresql/data ]
 
-  # alerts-db:
-  #   image: postgres:16
-  #   environment: { POSTGRES_PASSWORD: secret, POSTGRES_DB: alerts }
-
-  # users-db:
-  #   image: postgres:16
-  #   environment: { POSTGRES_PASSWORD: secret, POSTGRES_DB: users }
+  alerts-db:
+    image: postgres:16
+    environment: { POSTGRES_PASSWORD: secret, POSTGRES_DB: alerts }
+    volumes: [ alerts-data:/var/lib/postgresql/data ]
 
   # ─── mikroserwisy ─────────────────────────────────────────
 
@@ -67,9 +64,12 @@ services:
         condition: service_healthy
       rules-db:
         condition: service_started
+      rules-redis:
+        condition: service_started
     environment:
       DATABASE_URL: postgres://postgres:secret@rules-db:5432/rules
       RABBIT_URL: amqp://guest:guest@rabbitmq:5672
+      REDIS_URL: redis://rules-redis:6379/0
       RAILS_ENV: development
     volumes:
       - ./rules-service:/app
@@ -87,14 +87,108 @@ services:
         condition: service_healthy
       rules-db:
         condition: service_started
+      rules-redis:
+        condition: service_started
     command: bundle exec rake rabbitmq:listen
     environment:
       DATABASE_URL: postgres://postgres:secret@rules-db:5432/rules
       RABBIT_URL: amqp://guest:guest@rabbitmq:5672
+      REDIS_URL: redis://rules-redis:6379/0
       RAILS_ENV: development
     volumes:
       - ./rules-service:/app
 
+  rules-redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "900", "1", "--save", "300", "10"]
+
+  alerts:
+    build: ./alerts-service
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      alerts-db:
+        condition: service_started
+      alerts-redis:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgres://postgres:secret@alerts-db:5432/alerts
+      RABBIT_URL: amqp://guest:guest@rabbitmq:5672
+      REDIS_URL: redis://alerts-redis:6379/0
+      RAILS_ENV: development
+    volumes: [ ./alerts-service:/app ]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pit-alerts.rule=PathPrefix(`/alerts`)"
+      - "traefik.http.routers.pit-alerts.entrypoints=web"
+      - "traefik.http.services.pit-alerts.loadbalancer.server.port=3000"
+    command: bash -c "rm -f tmp/pids/server.pid && bin/rails server -b '0.0.0.0'"
+
+  alerts-subscriber:
+    build: ./alerts-service
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      alerts-db:
+        condition: service_started
+      alerts-redis:
+        condition: service_started
+    command: bundle exec rake rabbitmq:listen
+    environment:
+      DATABASE_URL: postgres://postgres:secret@alerts-db:5432/alerts
+      RABBIT_URL: amqp://guest:guest@rabbitmq:5672
+      REDIS_URL: redis://alerts-redis:6379/0
+      RAILS_ENV: development
+    volumes: [ ./alerts-service:/app ]
+
+  alerts-worker:
+    build: ./alerts-service
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      alerts-db:
+        condition: service_started
+      alerts-redis:
+        condition: service_started
+    command: bundle exec rake alerts:worker
+    environment:
+      DATABASE_URL: postgres://postgres:secret@alerts-db:5432/alerts
+      RABBIT_URL: amqp://guest:guest@rabbitmq:5672
+      REDIS_URL: redis://alerts-redis:6379/0
+      RAILS_ENV: development
+    volumes: [ ./alerts-service:/app ]
+
+  alerts-redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "900", "1", "--save", "300", "10"]
+
+  # ─── frontend ─────────────────────────────────────────
+
+  dashboard:
+    image: nginx:alpine
+    volumes:
+      - ./dashboard-service:/usr/share/nginx/html:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=PathPrefix(`/dashboard`)"
+      - "traefik.http.routers.dashboard.middlewares=dashboard-stripprefix"
+      - "traefik.http.middlewares.dashboard-stripprefix.stripprefix.prefixes=/dashboard"
+      - "traefik.http.routers.dashboard.entrypoints=web"
+      - "traefik.http.services.dashboard.loadbalancer.server.port=80"
+
+  simulator:
+    image: nginx:alpine
+    volumes:
+      - ./simulator-service:/usr/share/nginx/html:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.simulator.rule=PathPrefix(`/simulator`)"
+      - "traefik.http.routers.simulator.middlewares=simulator-stripprefix"
+      - "traefik.http.middlewares.simulator-stripprefix.stripprefix.prefixes=/simulator"
+      - "traefik.http.routers.simulator.entrypoints=web"
+      - "traefik.http.services.simulator.loadbalancer.server.port=80"
+
 volumes:
   telemetry-data:
   rules-data:
+  alerts-data:

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Telemetry Simulator</title>
+  </head>
+  <body>
+    <h1>Telemetry Simulator</h1>
+    <form id="telemetry-form">
+      <div id="sliders"></div>
+    </form>
+
+    <script>
+      const metrics = [
+        "tire_temp_fl",
+        "tire_temp_fr",
+        "tire_temp_rl",
+        "tire_temp_rr",
+        "brake_temp_fl",
+        "brake_temp_fr",
+        "brake_temp_rl",
+        "brake_temp_rr",
+        "engine_temp",
+        "oil_temp",
+        "fuel_level",
+        "gear",
+        "rpm",
+        "speed",
+        "throttle",
+        "brake_pressure",
+        "g_force_lat",
+        "g_force_long",
+        "battery_voltage",
+        "drs_status",
+        "ers_deployment",
+        "ers_charge",
+      ];
+
+      const metricRanges = {
+        tire_temp_fl: [50, 150],
+        tire_temp_fr: [50, 150],
+        tire_temp_rl: [50, 150],
+        tire_temp_rr: [50, 150],
+        brake_temp_fl: [100, 1200],
+        brake_temp_fr: [100, 1200],
+        brake_temp_rl: [100, 1200],
+        brake_temp_rr: [100, 1200],
+        engine_temp: [60, 130],
+        oil_temp: [60, 130],
+        fuel_level: [0, 110],
+        gear: [1, 8],
+        rpm: [0, 15000],
+        speed: [0, 380],
+        throttle: [0, 100],
+        brake_pressure: [0, 100],
+        g_force_lat: [-5, 5],
+        g_force_long: [-5, 5],
+        battery_voltage: [11, 15],
+        drs_status: [0, 1],
+        ers_deployment: [0, 100],
+        ers_charge: [0, 100],
+      };
+
+      const defaultValues = {};
+      for (const metric in metricRanges) {
+        const [min, max] = metricRanges[metric];
+        defaultValues[metric] = (min + max) / 2;
+      }
+
+      const slidersDiv = document.getElementById("sliders");
+
+      metrics.forEach((metric) => {
+        const [min, max] = metricRanges[metric];
+        const container = document.createElement("div");
+        container.innerHTML = `
+        <label for="${metric}">${metric} (${min}-${max}): <span id="${metric}_val">${defaultValues[metric]}</span></label><br>
+        <input type="range" id="${metric}" name="${metric}" min="${min}" max="${max}" step="0.1" value="${defaultValues[metric]}"><br><br>
+      `;
+        slidersDiv.appendChild(container);
+
+        const slider = container.querySelector(`#${metric}`);
+        const valSpan = container.querySelector(`#${metric}_val`);
+        slider.addEventListener("input", () => {
+          valSpan.innerText = slider.value;
+        });
+      });
+
+      function getTelemetryReadings() {
+        return metrics.map((metric) => {
+          const value = parseFloat(document.getElementById(metric).value);
+          return { metric: metric, value: value };
+        });
+      }
+
+      function sendTelemetry() {
+        const readings = getTelemetryReadings();
+        fetch("http://localhost:8080/telemetry/cars/1/readings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ readings: readings }),
+        })
+          .then((response) => {
+            if (!response.ok) {
+              console.error("Failed to send telemetry", response.statusText);
+            }
+          })
+          .catch((err) => console.error("Error:", err));
+      }
+
+      // Send telemetry every second
+      setInterval(sendTelemetry, 1000);
+    </script>
+  </body>
+</html>

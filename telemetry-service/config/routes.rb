@@ -4,5 +4,6 @@ Rails.application.routes.draw do
 
     resources :cars, only: [:index]
     post 'cars/:car_code/readings', to: 'readings#create'
+    get 'cars/:car_code/readings/latest', to: 'readings#latest'
   end
 end

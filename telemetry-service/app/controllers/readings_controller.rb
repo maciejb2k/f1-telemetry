@@ -2,6 +2,22 @@
 class ReadingsController < ActionController::API
   before_action :set_car
 
+  def latest
+    car_code = params[:car_code]
+    car = Car.find_by!(car_code: car_code)
+
+    readings = Reading
+      .where(car: car)
+      .select('DISTINCT ON (metric) metric, value, created_at')
+      .order('metric, created_at DESC')
+
+    render json: {
+      car_code: car_code,
+      timestamp: Time.current,
+      readings: readings.map { |r| { metric: r.metric, value: r.value, updated_at: r.created_at } }
+    }
+  end
+
   def create
     readings_data = readings_params
 

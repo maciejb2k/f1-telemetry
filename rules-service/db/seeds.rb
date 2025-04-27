@@ -1,9 +1,24 @@
-# This file should ensure the existence of records required to run the application in every environment (production,
-# development, test). The code here should be idempotent so that it can be executed at any point in every environment.
-# The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).
-#
-# Example:
-#
-#   ["Action", "Comedy", "Drama", "Horror"].each do |genre_name|
-#     MovieGenre.find_or_create_by!(name: genre_name)
-#   end
+puts "Kasowanie istniejących reguł..."
+Rule.delete_all
+
+puts "Dodawanie reguły: Temperatura opony FL > 110°C"
+Rule.create!(
+  metric: 'tire_temp_fl',
+  operator: '>',
+  threshold: 110,
+  severity: 'warning',
+  car_scope: 1,
+  active: true
+)
+
+puts "Dodawanie reguły: Niski poziom ERS < 30%"
+Rule.create!(
+  metric: 'ers_charge',
+  operator: '<',
+  threshold: 30,
+  severity: 'warning',
+  car_scope: 1,
+  active: true
+)
+
+puts "Dodano #{Rule.count} reguł."
