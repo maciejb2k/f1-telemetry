@@ -1,8 +1,14 @@
 services:
   # ─── infra ────────────────────────────────────────────────
+
   gateway:
     image: traefik:v3.0
-    command: --providers.docker --entrypoints.web.address=:80 --api.insecure
+    command:
+      - "--log.level=DEBUG"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entryPoints.web.address=:80"
     ports: [ "8080:80", "8081:8080" ]
     volumes: [ "/var/run/docker.sock:/var/run/docker.sock:ro" ]
 
@@ -19,27 +25,44 @@ services:
   rules-db:
     image: postgres:16
     environment: { POSTGRES_PASSWORD: secret, POSTGRES_DB: rules }
+    volumes: [ rules-data:/var/lib/postgresql/data ]
 
-  alerts-db:
-    image: postgres:16
-    environment: { POSTGRES_PASSWORD: secret, POSTGRES_DB: alerts }
+  # alerts-db:
+  #   image: postgres:16
+  #   environment: { POSTGRES_PASSWORD: secret, POSTGRES_DB: alerts }
 
-  users-db:
-    image: postgres:16
-    environment: { POSTGRES_PASSWORD: secret, POSTGRES_DB: users }
+  # users-db:
+  #   image: postgres:16
+  #   environment: { POSTGRES_PASSWORD: secret, POSTGRES_DB: users }
 
   # ─── mikroserwisy ─────────────────────────────────────────
+
   telemetry:
     build: ./telemetry-service
     environment:
       DATABASE_URL: postgres://postgres:secret@telemetry-db:5432/telemetry
       RABBIT_URL:   amqp://guest:guest@rabbitmq:5672
-      CAR_CODES:   "1:Max Verstappen,11:Sergio Perez"
-      UID: ${UID:-1000}
-      GID: ${GID:-1000}
     volumes: [ ./telemetry-service:/app ]
     labels:
-      - traefik.http.routers.telemetry.rule=PathPrefix(`/telemetry`,`/cars`)
+      - "traefik.enable=true"
+      - "traefik.http.routers.telemetry.rule=PathPrefix(`/telemetry`)"
+      - "traefik.http.routers.telemetry.entrypoints=web"
+      - "traefik.http.services.telemetry.loadbalancer.server.port=3000"
+
+  strategy-rules:
+    build: ./strategy-rules-service
+    environment:
+      DATABASE_URL: postgres://postgres:secret@rules-db:5432/rules
+      RABBIT_URL:   amqp://guest:guest@rabbitmq:5672
+    volumes:
+      - ./strategy-rules:/app
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.strategy-rules.rule=PathPrefix(`/rules`)"
+      - "traefik.http.routers.strategy-rules.entrypoints=web"
+      - "traefik.http.services.strategy-rules.loadbalancer.server.port=3000"
 
 volumes:
   telemetry-data:
+  rules-data:
+  alerts-data:
