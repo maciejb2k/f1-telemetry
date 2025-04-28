@@ -1,4 +1,4 @@
-class AlertProcessor
+class AlertEvaluator
   def self.process(event)
     rule_id = event['rule_id']
     car_code = event['car_code']
@@ -8,13 +8,7 @@ class AlertProcessor
     alert = Alert.active.find_by(rule_id: rule_id, car_code: car_code)
 
     if alert
-      return if Rails.cache.read("alert:#{alert.id}:snoozed")
-
-      if !alert.acknowledged? && now - alert.last_trigger_at >= 5.seconds
-        alert.update!(last_value: value, last_trigger_at: now)
-      else
-        alert.update!(last_trigger_at: now, last_value: value)
-      end
+      alert.update!(last_trigger_at: now, last_value: value)
     else
       Alert.create!(
         rule_id: rule_id,

@@ -55,7 +55,17 @@ services:
       - "traefik.http.routers.telemetry.rule=PathPrefix(`/telemetry`)"
       - "traefik.http.routers.telemetry.entrypoints=web"
       - "traefik.http.services.telemetry.loadbalancer.server.port=3000"
-    command: bash -c "rm -f tmp/pids/server.pid && bin/rails server -b '0.0.0.0'"
+    stdin_open: true
+    tty: true
+    command: >
+      bash -c "
+        bin/rails db:create &&
+        bin/rails db:migrate &&
+        bin/rails db:schema:load &&
+        bin/rails db:seed &&
+        rm -f tmp/pids/server.pid &&
+        bin/rails s -b '0.0.0.0'
+      "
 
   rules:
     build: ./rules-service
@@ -78,7 +88,17 @@ services:
       - "traefik.http.routers.strategy-rules.rule=PathPrefix(`/rules`)"
       - "traefik.http.routers.strategy-rules.entrypoints=web"
       - "traefik.http.services.strategy-rules.loadbalancer.server.port=3000"
-    command: bash -c "rm -f tmp/pids/server.pid && bin/rails server -b '0.0.0.0'"
+    stdin_open: true
+    tty: true
+    command: >
+      bash -c "
+        bin/rails db:create &&
+        bin/rails db:migrate &&
+        bin/rails db:schema:load &&
+        bin/rails db:seed &&
+        rm -f tmp/pids/server.pid &&
+        bin/rails s -b '0.0.0.0'
+      "
 
   rules-subscriber:
     build: ./rules-service
@@ -122,7 +142,17 @@ services:
       - "traefik.http.routers.pit-alerts.rule=PathPrefix(`/alerts`)"
       - "traefik.http.routers.pit-alerts.entrypoints=web"
       - "traefik.http.services.pit-alerts.loadbalancer.server.port=3000"
-    command: bash -c "rm -f tmp/pids/server.pid && bin/rails server -b '0.0.0.0'"
+    stdin_open: true
+    tty: true
+    command: >
+      bash -c "
+        bin/rails db:create &&
+        bin/rails db:migrate &&
+        bin/rails db:schema:load &&
+        bin/rails db:seed &&
+        rm -f tmp/pids/server.pid &&
+        bin/rails s -b '0.0.0.0'
+      "
 
   alerts-subscriber:
     build: ./alerts-service

@@ -1,22 +1,47 @@
 class AlertsController < ActionController::API
-  def active
-    render json: Alert.active
+  before_action :set_alert, only: [:show]
+
+  # GET /alerts?car_code=1&status=closed&since=...
+  def index
+    alerts = filtered_alerts(Alert.all)
+    render json: alerts
   end
 
-  def history
-    since = params[:since] || 24.hours.ago
-    render json: Alert.recent_closed_ordered(since)
+  # GET /alerts/:id
+  def show
+    render json: @alert
   end
 
-  def acknowledge
-    alert = Alert.find(params[:id])
-    alert.acknowledge!(params[:user_id])
-    render json: { status: 'acknowledged' }
-  end
+  private
 
-  def snooze
-    alert = Alert.find(params[:id])
-    Rails.cache.write("alert:#{alert.id}:snoozed", true, expires_in: params[:duration_s].to_i.seconds)
-    render json: { status: 'snoozed' }
-  end
+    def set_alert
+      @alert = Alert.find(params[:id])
+    end
+
+    def filtered_alerts(scope)
+      scope = scope.where(car_code: params[:car_code]) if params[:car_code].present?
+
+      # Filtrowanie po statusie
+      if params[:status].present?
+        case params[:status]
+        when 'active'
+          scope = scope.active.order(opened_at: :asc)
+        when 'closed'
+          scope = scope.closed.order(opened_at: :desc)
+        end
+      end
+
+      # Filtrowanie po czasie
+      if params[:since].present?
+        since_time = Time.parse(params[:since]) rescue 24.hours.ago
+        scope = scope.where('opened_at >= ?', since_time)
+      end
+
+      if params[:limit].present?
+        limit = params[:limit].to_i
+        scope = scope.limit(limit)
+      end
+
+      scope
+    end
 end

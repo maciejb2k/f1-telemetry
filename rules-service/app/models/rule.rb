@@ -1,3 +1,21 @@
+# == Schema Information
+#
+# Table name: rules
+#
+#  id         :uuid             not null, primary key
+#  active     :boolean          default(TRUE)
+#  car_scope  :integer
+#  metric     :string           not null
+#  operator   :string           not null
+#  severity   :string           not null
+#  threshold  :decimal(, )      not null
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
+#
+# Indexes
+#
+#  index_rules_on_metric_and_car_scope  (metric,car_scope)
+#
 class Rule < ApplicationRecord
   OPERATORS = %w[> >= < <= == !=].freeze
 
@@ -7,12 +25,10 @@ class Rule < ApplicationRecord
 
   scope :active, -> { where(active: true) }
 
-  # Czy reguła dotyczy konkretnego auta, czy wszystkich
   def applies_to_car?(car_code)
     car_scope.nil? || car_scope == car_code
   end
 
-  # Czy wartość telemetryczna spełnia warunek
   def condition_met?(value)
     value = value.to_f
     thr   = threshold.to_f

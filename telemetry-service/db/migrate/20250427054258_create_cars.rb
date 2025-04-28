@@ -6,6 +6,8 @@ class CreateCars < ActiveRecord::Migration[7.2]
       t.integer :car_code, null: false, index: { unique: true }
       t.string  :driver
       t.string  :chassis, default: "RB21"
+      t.string :team_name
+      t.string :driver_photo_url
 
       t.timestamps
     end

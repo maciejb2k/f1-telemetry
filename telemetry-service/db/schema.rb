@@ -19,6 +19,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_04_27_054700) do
     t.integer "car_code", null: false
     t.string "driver"
     t.string "chassis", default: "RB21"
+    t.string "team_name"
+    t.string "driver_photo_url"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["car_code"], name: "index_cars_on_car_code", unique: true
@@ -28,6 +30,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_04_27_054700) do
     t.uuid "car_id", null: false
     t.string "metric", null: false
     t.decimal "value", null: false
+    t.string "session"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["car_id"], name: "index_readings_on_car_id"

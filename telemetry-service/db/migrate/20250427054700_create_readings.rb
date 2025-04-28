@@ -5,6 +5,7 @@ class CreateReadings < ActiveRecord::Migration[7.2]
 
       t.string  :metric, null: false
       t.decimal :value,  null: false
+      t.string :session
 
       t.timestamps
     end

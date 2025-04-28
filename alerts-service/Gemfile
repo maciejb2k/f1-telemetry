@@ -13,6 +13,7 @@ gem "tailwindcss-rails"
 gem 'rack-cors'
 gem "redis"
 gem "bunny"
+gem "annotate"
 
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 gem "bootsnap", require: false
