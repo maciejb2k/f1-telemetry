@@ -11,10 +11,6 @@ class CreateAlerts < ActiveRecord::Migration[7.2]
       t.decimal :last_value, null: false
       t.string  :severity, null: false
 
-      t.boolean :acknowledged, default: false
-      t.datetime :acknowledged_at
-      t.integer :acknowledged_by
-
       t.datetime :opened_at, null: false
       t.datetime :last_trigger_at, null: false
       t.datetime :closed_at

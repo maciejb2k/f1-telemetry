@@ -3,9 +3,6 @@
 # Table name: alerts
 #
 #  id              :uuid             not null, primary key
-#  acknowledged    :boolean          default(FALSE)
-#  acknowledged_at :datetime
-#  acknowledged_by :integer
 #  car_code        :integer          not null
 #  closed_at       :datetime
 #  last_trigger_at :datetime         not null
