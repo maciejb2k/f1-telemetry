@@ -12,12 +12,10 @@ const ALERTS_CLOSED_URL = (carCode, since) =>
 const F1_LOGO_URL =
   "https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/F1.svg/320px-F1.svg.png";
 
-// === GLOBALS ===
 let selectedCarCode = 1;
 let carsData = [];
 const previousValues = {};
 
-// === FUNCTIONS ===
 async function loadCars() {
   const response = await fetch(CARS_URL);
   const cars = await response.json();
@@ -103,7 +101,7 @@ async function fetchAlerts() {
 async function fetchHistory() {
   try {
     const sinceDate = new Date();
-    sinceDate.setHours(sinceDate.getHours() - 24); // ostatnie 24h
+    sinceDate.setHours(sinceDate.getHours() - 24);
     const sinceISO = sinceDate.toISOString();
 
     const response = await fetch(ALERTS_CLOSED_URL(selectedCarCode, sinceISO));

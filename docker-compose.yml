@@ -36,6 +36,14 @@ services:
     environment: { POSTGRES_PASSWORD: secret, POSTGRES_DB: alerts }
     volumes: [ alerts-data:/var/lib/postgresql/data ]
 
+  rules-redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "900", "1", "--save", "300", "10"]
+
+  alerts-redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "900", "1", "--save", "300", "10"]
+
   # ─── mikroserwisy ─────────────────────────────────────────
 
   telemetry:
@@ -118,10 +126,6 @@ services:
     volumes:
       - ./rules-service:/app
 
-  rules-redis:
-    image: redis:7-alpine
-    command: ["redis-server", "--save", "900", "1", "--save", "300", "10"]
-
   alerts:
     build: ./alerts-service
     depends_on:
@@ -187,10 +191,6 @@ services:
       REDIS_URL: redis://alerts-redis:6379/0
       RAILS_ENV: development
     volumes: [ ./alerts-service:/app ]
-
-  alerts-redis:
-    image: redis:7-alpine
-    command: ["redis-server", "--save", "900", "1", "--save", "300", "10"]
 
   # ─── frontend ─────────────────────────────────────────
 

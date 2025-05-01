@@ -21,7 +21,6 @@ class AlertsController < ActionController::API
     def filtered_alerts(scope)
       scope = scope.where(car_code: params[:car_code]) if params[:car_code].present?
 
-      # Filtrowanie po statusie
       if params[:status].present?
         case params[:status]
         when 'active'
@@ -31,7 +30,6 @@ class AlertsController < ActionController::API
         end
       end
 
-      # Filtrowanie po czasie
       if params[:since].present?
         since_time = Time.parse(params[:since]) rescue 24.hours.ago
         scope = scope.where('opened_at >= ?', since_time)

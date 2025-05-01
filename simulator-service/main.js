@@ -1,15 +1,12 @@
-// === API URLS ===
 const API_BASE_URL = "http://localhost:8080";
 
 const CARS_URL = `${API_BASE_URL}/telemetry/cars`;
 const TELEMETRY_POST_URL = (carCode) =>
   `${API_BASE_URL}/telemetry/cars/${carCode}/readings`;
 
-// === GLOBALS ===
 let selectedCarCode = 1;
 let carsData = [];
 
-// === METRICS ===
 const metricGroups = {
   "Tire Temperatures": [
     "tire_temp_fl",

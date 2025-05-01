@@ -1,4 +1,3 @@
-# Usunięcie wszystkich danych
 Reading.delete_all
 Car.delete_all
 
