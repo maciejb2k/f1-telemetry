@@ -21,7 +21,7 @@ Technologies used in this project:
   <img src="https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="TailwindCSS">
 </p>
 
-![F1 Telemetry System Hero Image](screenshots/image.png)
+![F1 Telemetry System Hero Image](_screenshots/image.png)
 
 ## Overview
 
@@ -37,7 +37,7 @@ The system is designed as a **Monorepo** orchestrating 5 distinct services and i
 
 The system utilizes a microservices architecture managed by **Docker Compose**. Traffic is routed via **Traefik** (acting as an API Gateway and Reverse Proxy), and inter-service communication is handled asynchronously by **RabbitMQ**.
 
-![System Architecture Diagram](screenshots/image-1.png)
+![System Architecture Diagram](_screenshots/image-1.png)
 
 ### Infrastructure Components
 * **Traefik:** API Gateway & Service Discovery. Routes traffic from `localhost:8080` to internal containers.
@@ -48,7 +48,7 @@ The system utilizes a microservices architecture managed by **Docker Compose**. 
 
 ## Services
 
-![Microservices Overview](screenshots/image-6.png)
+![Microservices Overview](_screenshots/image-6.png)
 
 The repository is organized into the following services:
 
@@ -64,8 +64,8 @@ The repository is organized into the following services:
 
 The system relies on an event-driven flow to process data without direct coupling between services.
 
-![Data Flow Diagram between Microservices](screenshots/image-2.png)
-![RabbitMQ Event Routing Schema](screenshots/image-7.png)
+![Data Flow Diagram between Microservices](_screenshots/image-2.png)
+![RabbitMQ Event Routing Schema](_screenshots/image-7.png)
 
 1.  **Ingestion:** Simulator POSTs data to `Telemetry Service` (REST).
 2.  **Publication:** `Telemetry Service` publishes payload to `telemetry` exchange with key `reading.<car_code>`.
@@ -79,14 +79,14 @@ The system relies on an event-driven flow to process data without direct couplin
 ### 1. Simulator
 Select a driver (e.g., Max Verstappen) and adjust sliders for metrics like `tire_temp`, `brake_pressure`, or `fuel_level`. The simulator sends data every second.
 
-![Simulator Interface Controls](screenshots/image-3.png)
-![Telemetry Data Input View](screenshots/image-9.png)
+![Simulator Interface Controls](_screenshots/image-3.png)
+![Telemetry Data Input View](_screenshots/image-9.png)
 
 ### 2. Dashboard
 Open the dashboard in a separate window. Select the same driver. You will see real-time updates. If you simulate a critical value (e.g., Brake Temp > 800°C), an alert will appear instantly in the "Active Alerts" panel.
 
-![Race Engineer Dashboard Overview](screenshots/image-4.png)
-![Real-time Alerts and Metrics Panel](screenshots/image-5.png)
+![Race Engineer Dashboard Overview](_screenshots/image-4.png)
+![Real-time Alerts and Metrics Panel](_screenshots/image-5.png)
 
 ## API Endpoints
 
